@@ -5,6 +5,7 @@
     "main": "./dist/index.js",
     "types": "./src/typings.d.ts",
     "dependencies": {
-        "onejs-core": "^0.3.18"
+        "onejs-core": "^0.3.25",
+        "onejs-preact": "^0.3.18"
     }
 }
