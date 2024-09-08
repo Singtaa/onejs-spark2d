@@ -3,9 +3,11 @@ import { ComputeShader, Graphics, Mathf, RenderTexture, Shader } from "UnityEngi
 const RESULT: number = Shader.PropertyToID("result");
 const SCALE: number = Shader.PropertyToID("scale");
 const OFFSET: number = Shader.PropertyToID("offset");
+const ROTATION: number = Shader.PropertyToID("rotation");
 const OCTAVES: number = Shader.PropertyToID("octaves");
 const LACUNARITY: number = Shader.PropertyToID("lacunarity");
 const GAIN: number = Shader.PropertyToID("gain");
+const SEED: number = Shader.PropertyToID("seed");
 
 /**
  * Returns an FBM (Fractional Brownian Motion) noise generator
@@ -33,9 +35,11 @@ export class FBM {
     #scale: number = 2;
     #offsetX: number = 0;
     #offsetY: number = 0;
+    #rotation: number = 0;
     #octaves: number = 5;
     #lacunarity: number = 2;
     #gain: number = 0.5;
+    #seed: number = 0;
 
     constructor(width: number, height: number) {
         this.#threadGroupsX = Mathf.CeilToInt(width / 8);
@@ -50,6 +54,11 @@ export class FBM {
     offset(x: number, y: number) {
         this.#offsetX = x;
         this.#offsetY = y;
+        return this;
+    }
+
+    rot(r: number) {
+        this.#rotation = r;
         return this;
     }
 
@@ -80,6 +89,8 @@ export class FBM {
         this.#shader.SetInt(OCTAVES, this.#octaves);
         this.#shader.SetFloat(LACUNARITY, this.#lacunarity);
         this.#shader.SetFloat(GAIN, this.#gain);
+        this.#shader.SetFloat(ROTATION, this.#rotation);
+        this.#shader.SetFloat(SEED, this.#seed);
 
         Graphics.SetRenderTarget(this.#texture);
         this.#shader.Dispatch(this.#kernel, this.#threadGroupsX, this.#threadGroupsY, 1);
