@@ -83,6 +83,6 @@ export class FBM {
 
         Graphics.SetRenderTarget(this.#texture);
         this.#shader.Dispatch(this.#kernel, this.#threadGroupsX, this.#threadGroupsY, 1);
-        return this;
+        return this.#texture;
     }
 }

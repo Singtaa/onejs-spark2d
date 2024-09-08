@@ -102,9 +102,7 @@ export class SDField {
     constructor(width: number, height: number) {
         this.#threadGroupsX = Mathf.CeilToInt(width / 8);
         this.#threadGroupsY = Mathf.CeilToInt(height / 8);
-        this.#texture = CS.Spark2D.RenderTextureUtil.SingleChannelRT32(width, height);
-        this.#texture.enableRandomWrite = true;
-        this.#texture.Create();
+        this.#texture = CS.Spark2D.RenderTextureUtil.CreateRFloatRT(width, height);
         this.#shader = csDepot.Get("sdfield")
         this.#kernel = this.#shader.FindKernel("CSMain");
     }
@@ -158,7 +156,7 @@ export class SDField {
         this.#shader.SetFloat(F1, radius);
 
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     roundedBox(width: number, height: number, c1: number, c2: number, c3: number, c4: number) {
@@ -171,7 +169,7 @@ export class SDField {
         this.#shader.SetFloat(F6, c4);
 
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     box(width: number, height: number) {
@@ -179,7 +177,7 @@ export class SDField {
         this.#shader.SetFloat(F1, width);
         this.#shader.SetFloat(F2, height);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     orientedBox(width: number, height: number, th: number) {
@@ -188,7 +186,7 @@ export class SDField {
         this.#shader.SetFloat(F2, height);
         this.#shader.SetFloat(F3, th);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     segment(x1: number, y1: number, x2: number, y2: number) {
@@ -198,7 +196,7 @@ export class SDField {
         this.#shader.SetFloat(F3, x2);
         this.#shader.SetFloat(F4, y2);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     rhombus(width: number, height: number) {
@@ -206,7 +204,7 @@ export class SDField {
         this.#shader.SetFloat(F1, width);
         this.#shader.SetFloat(F2, height);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     trapezoid(r1: number, r2: number, he: number) {
@@ -215,7 +213,7 @@ export class SDField {
         this.#shader.SetFloat(F2, r2);
         this.#shader.SetFloat(F3, he);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     parallelogram(width: number, height: number, skew: number) {
@@ -224,14 +222,14 @@ export class SDField {
         this.#shader.SetFloat(F2, height);
         this.#shader.SetFloat(F3, skew);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     equilateralTriangle(radius: number) {
         this.#shader.SetInt(SHAPE_TYPE, ShapeType.EquilateralTriangle);
         this.#shader.SetFloat(F1, radius);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     triangleIsosceles(width: number, height: number) {
@@ -239,7 +237,7 @@ export class SDField {
         this.#shader.SetFloat(F1, width);
         this.#shader.SetFloat(F2, height);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     triangle(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number) {
@@ -251,7 +249,7 @@ export class SDField {
         this.#shader.SetFloat(F5, x3);
         this.#shader.SetFloat(F6, y3);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     unevenCapsule(r1: number, r2: number, height: number) {
@@ -260,35 +258,35 @@ export class SDField {
         this.#shader.SetFloat(F2, r2);
         this.#shader.SetFloat(F3, height);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     pentagon(radius: number) {
         this.#shader.SetInt(SHAPE_TYPE, ShapeType.Pentagon);
         this.#shader.SetFloat(F1, radius);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     hexagon(radius: number) {
         this.#shader.SetInt(SHAPE_TYPE, ShapeType.Hexagon);
         this.#shader.SetFloat(F1, radius);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     octogon(radius: number) {
         this.#shader.SetInt(SHAPE_TYPE, ShapeType.Octogon);
         this.#shader.SetFloat(F1, radius);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     hexagram(radius: number) {
         this.#shader.SetInt(SHAPE_TYPE, ShapeType.Hexagram);
         this.#shader.SetFloat(F1, radius);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     star5(outerRadius: number, innerRadius: number) {
@@ -296,7 +294,7 @@ export class SDField {
         this.#shader.SetFloat(F1, outerRadius);
         this.#shader.SetFloat(F2, innerRadius);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     star(radius: number, n: number, m: number) {
@@ -305,7 +303,7 @@ export class SDField {
         this.#shader.SetFloat(F2, n);
         this.#shader.SetFloat(F3, m);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     pie(radius: number, angle: number) {
@@ -313,7 +311,7 @@ export class SDField {
         this.#shader.SetFloat(F1, radius);
         this.#shader.SetFloat(F2, angle);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     cutDisk(radius: number, height: number) {
@@ -321,7 +319,7 @@ export class SDField {
         this.#shader.SetFloat(F1, radius);
         this.#shader.SetFloat(F2, height);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     arc(radius: number, startAngle: number, endAngle: number, thickness: number) {
@@ -331,7 +329,7 @@ export class SDField {
         this.#shader.SetFloat(F3, endAngle);
         this.#shader.SetFloat(F4, thickness);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     ring(radius: number, thickness: number) {
@@ -339,7 +337,7 @@ export class SDField {
         this.#shader.SetFloat(F1, radius);
         this.#shader.SetFloat(F2, thickness);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     horseshoe(radius: number, angle: number, thickness: number) {
@@ -348,7 +346,7 @@ export class SDField {
         this.#shader.SetFloat(F2, angle);
         this.#shader.SetFloat(F3, thickness);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     vesica(radius: number, distance: number) {
@@ -356,7 +354,7 @@ export class SDField {
         this.#shader.SetFloat(F1, radius);
         this.#shader.SetFloat(F2, distance);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     orientedVesica(width: number, height: number, radius: number) {
@@ -365,7 +363,7 @@ export class SDField {
         this.#shader.SetFloat(F2, height);
         this.#shader.SetFloat(F3, radius);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     moon(distance: number, ra: number, rb: number) {
@@ -374,14 +372,14 @@ export class SDField {
         this.#shader.SetFloat(F2, ra);
         this.#shader.SetFloat(F3, rb);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     roundedCross(size: number) {
         this.#shader.SetInt(SHAPE_TYPE, ShapeType.RoundedCross);
         this.#shader.SetFloat(F1, size);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     egg(ra: number, rb: number) {
@@ -389,13 +387,13 @@ export class SDField {
         this.#shader.SetFloat(F1, ra);
         this.#shader.SetFloat(F2, rb);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     heart() {
         this.#shader.SetInt(SHAPE_TYPE, ShapeType.Heart);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     cross(width: number, height: number, thickness: number) {
@@ -404,7 +402,7 @@ export class SDField {
         this.#shader.SetFloat(F2, height);
         this.#shader.SetFloat(F3, thickness);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     roundedX(width: number, radius: number) {
@@ -412,7 +410,7 @@ export class SDField {
         this.#shader.SetFloat(F1, width);
         this.#shader.SetFloat(F2, radius);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     polygon(vertices: Array<[number, number]>) {
@@ -421,7 +419,7 @@ export class SDField {
         this.#shader.SetFloats.call(null, [VERTS, ...verts]); // Need to test this
         this.#shader.SetInt(F1, vertices.length);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     ellipse(width: number, height: number) {
@@ -429,14 +427,14 @@ export class SDField {
         this.#shader.SetFloat(F1, width);
         this.#shader.SetFloat(F2, height);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     parabola(k: number) {
         this.#shader.SetInt(SHAPE_TYPE, ShapeType.Parabola);
         this.#shader.SetFloat(F1, k);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     parabolaSegment(width: number, height: number) {
@@ -444,7 +442,7 @@ export class SDField {
         this.#shader.SetFloat(F1, width);
         this.#shader.SetFloat(F2, height);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     bezier(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number) {
@@ -456,14 +454,14 @@ export class SDField {
         this.#shader.SetFloat(F5, x3);
         this.#shader.SetFloat(F6, y3);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     blobbyCross(height: number) {
         this.#shader.SetInt(SHAPE_TYPE, ShapeType.BlobbyCross);
         this.#shader.SetFloat(F1, height);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     tunnel(width: number, height: number) {
@@ -471,7 +469,7 @@ export class SDField {
         this.#shader.SetFloat(F1, width);
         this.#shader.SetFloat(F2, height);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     stairs(width: number, height: number, steps: number) {
@@ -480,13 +478,13 @@ export class SDField {
         this.#shader.SetFloat(F2, height);
         this.#shader.SetFloat(F3, steps);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     quadraticCircle() {
         this.#shader.SetInt(SHAPE_TYPE, ShapeType.QuadraticCircle);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     hyperbola(k: number, height: number) {
@@ -494,13 +492,13 @@ export class SDField {
         this.#shader.SetFloat(F1, k);
         this.#shader.SetFloat(F2, height);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     coolS() {
         this.#shader.SetInt(SHAPE_TYPE, ShapeType.fCoolS);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 
     circleWave(thickness: number, radius: number) {
@@ -508,6 +506,6 @@ export class SDField {
         this.#shader.SetFloat(F1, thickness);
         this.#shader.SetFloat(F2, radius);
         this.#dispatch();
-        return this;
+        return this.#texture;
     }
 }

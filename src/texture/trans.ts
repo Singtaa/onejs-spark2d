@@ -11,15 +11,16 @@ interface RTProvider {
 }
 
 /**
- * Returns a wrapper that allows you to do transformations on the passed in RenderTexture
+ * Returns a wrapper that allows you to do transformations on the passed in RenderTexture.
+ * [Immutable] The input texture will not be modified.
  */
-export function tiling(tex: RenderTexture | RTProvider) {
-    return new Tiling("rt" in tex ? tex.rt : tex);
+export function trans(tex: RenderTexture | RTProvider) {
+    return new Trans("rt" in tex ? tex.rt : tex);
 }
 
-export class Tiling {
+export class Trans {
     /**
-     * The underlying RenderTexture
+     * The result RenderTexture
      */
     get rt() {
         return this.#result;
@@ -29,7 +30,7 @@ export class Tiling {
     #threadGroupsY: number;
     #shader: ComputeShader;
     #kernel: number;
-    #tex1: RenderTexture;
+    #tex1: RenderTexture; // The original texture
     #result: RenderTexture;
 
     #u: number = 0
@@ -46,12 +47,12 @@ export class Tiling {
         this.#result = CS.Spark2D.RenderTextureUtil.SingleChannelRT32(width, height);
         this.#result.enableRandomWrite = true;
         this.#result.Create();
-        this.#shader = csDepot.Get("tiling");
+        this.#shader = csDepot.Get("trans");
         this.#kernel = this.#shader.FindKernel("CSMain");
     }
 
     /**
-     * In UV space
+     * Translate (in UV space) the texture by the given offset
      */
     offset(u: number, v: number) {
         this.#u = u;
@@ -59,22 +60,34 @@ export class Tiling {
         return this;
     }
 
+    /**
+     * Rotate the texture by the given angle in degrees
+     */
     rot(rot: number) { // in degrees
         this.#rot = rot * Mathf.Deg2Rad;
         return this;
     }
 
+    /**
+     * Rotate the texture by the given angle in radians
+     */
     rotr(rot: number) { // in radians
         this.#rot = rot;
         return this;
     }
 
+    /**
+     * Scale the texture by the given factor
+     */
     scale(x: number, y?: number) {
         this.#scaleX = x;
         this.#scaleY = y ?? x;
         return this;
     }
 
+    /**
+     * Execute the transformations and returns the result RenderTexture
+     */
     dispatch() {
         this.#shader.SetTexture(this.#kernel, TEX1, this.#tex1);
         this.#shader.SetTexture(this.#kernel, RESULT, this.#result);
@@ -84,6 +97,6 @@ export class Tiling {
 
         Graphics.SetRenderTarget(this.#result);
         this.#shader.Dispatch(this.#kernel, this.#threadGroupsX, this.#threadGroupsY, 1);
-        return this;
+        return this.#result;
     }
 }
