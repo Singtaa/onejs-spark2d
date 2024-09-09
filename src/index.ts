@@ -3,6 +3,8 @@ export { maop, Maop } from './math/maop'
 export { fbm, FBM } from './noise/fbm'
 export { sdfield, SDField } from './sdf/sdfield'
 export { trans, Trans } from "./texture/trans"
+export { tile, Tile } from "./texture/tile"
+export { channel, Channel } from "./channel"
 
 import { RenderTexture } from "UnityEngine"
 

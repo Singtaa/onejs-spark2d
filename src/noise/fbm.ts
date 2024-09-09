@@ -44,9 +44,7 @@ export class FBM {
     constructor(width: number, height: number) {
         this.#threadGroupsX = Mathf.CeilToInt(width / 8);
         this.#threadGroupsY = Mathf.CeilToInt(height / 8);
-        this.#texture = CS.Spark2D.RenderTextureUtil.SingleChannelRT32(width, height);
-        this.#texture.enableRandomWrite = true;
-        this.#texture.Create();
+        this.#texture = CS.Spark2D.RenderTextureUtil.CreateRFloatRT(width, height);
         this.#shader = csDepot.Get("fbm")
         this.#kernel = this.#shader.FindKernel("CSMain");
     }

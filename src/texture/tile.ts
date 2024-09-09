@@ -11,27 +11,27 @@ interface RTProvider {
 }
 
 /**
- * Returns a wrapper that allows you to do transformations on the passed in RenderTexture.
- * [Mutable] Operations will modify the input texture.
+ * This is the [Immutable] version of `trans`. It keeps the original texture unchanged, so that 
+ * you can do consecutive transformations without getting artifacts.
  */
-export function trans(tex: RenderTexture | RTProvider) {
-    return new Trans("rt" in tex ? tex.rt : tex);
+export function tile(tex: RenderTexture | RTProvider) {
+    return new Tile("rt" in tex ? tex.rt : tex);
 }
 
-export class Trans {
+export class Tile {
     /**
      * The result RenderTexture
      */
     get rt() {
-        return this.#input;
+        return this.#result;
     }
 
     #threadGroupsX: number;
     #threadGroupsY: number;
     #shader: ComputeShader;
     #kernel: number;
-    #input: RenderTexture; // The original texture
-    #result: RenderTexture; // Buffer texture used for ping-pong
+    #tex1: RenderTexture; // The original texture
+    #result: RenderTexture;
 
     #u: number = 0
     #v: number = 0
@@ -41,24 +41,12 @@ export class Trans {
 
     constructor(rt: RenderTexture) {
         const { width, height } = rt;
-        this.#input = rt;
-        this.#result = CS.Spark2D.RenderTextureUtil.InitNew(rt);
+        this.#tex1 = rt;
         this.#threadGroupsX = Mathf.CeilToInt(width / 8);
         this.#threadGroupsY = Mathf.CeilToInt(height / 8);
+        this.#result = CS.Spark2D.RenderTextureUtil.CreateRFloatRT(width, height);
         this.#shader = csDepot.Get("trans");
         this.#kernel = this.#shader.FindKernel("CSMain");
-    }
-
-    #dispatch() {
-        this.#shader.SetTexture(this.#kernel, TEX1, this.#input);
-        this.#shader.SetTexture(this.#kernel, RESULT, this.#result);
-        this.#shader.SetFloats(OFFSET, this.#u, this.#v);
-        this.#shader.SetFloat(ROTATION, this.#rot);
-        this.#shader.SetFloats(SCALE, this.#scaleX, this.#scaleY);
-
-        Graphics.SetRenderTarget(this.#input);
-        this.#shader.Dispatch(this.#kernel, this.#threadGroupsX, this.#threadGroupsY, 1);
-        Graphics.Blit(this.#result, this.#input);
     }
 
     /**
@@ -67,7 +55,6 @@ export class Trans {
     offset(u: number, v: number) {
         this.#u = u;
         this.#v = v;
-        this.#dispatch();
         return this;
     }
 
@@ -76,7 +63,6 @@ export class Trans {
      */
     rot(rot: number) { // in degrees
         this.#rot = rot * Mathf.Deg2Rad;
-        this.#dispatch();
         return this;
     }
 
@@ -85,7 +71,6 @@ export class Trans {
      */
     rotr(rot: number) { // in radians
         this.#rot = rot;
-        this.#dispatch();
         return this;
     }
 
@@ -95,7 +80,21 @@ export class Trans {
     scale(x: number, y?: number) {
         this.#scaleX = x;
         this.#scaleY = y ?? x;
-        this.#dispatch();
         return this;
+    }
+
+    /**
+     * Execute the transformations and returns the result RenderTexture
+     */
+    dispatch() {
+        this.#shader.SetTexture(this.#kernel, TEX1, this.#tex1);
+        this.#shader.SetTexture(this.#kernel, RESULT, this.#result);
+        this.#shader.SetFloats(OFFSET, this.#u, this.#v);
+        this.#shader.SetFloat(ROTATION, this.#rot);
+        this.#shader.SetFloats(SCALE, this.#scaleX, this.#scaleY);
+
+        Graphics.SetRenderTarget(this.#result);
+        this.#shader.Dispatch(this.#kernel, this.#threadGroupsX, this.#threadGroupsY, 1);
+        return this.#result;
     }
 }
