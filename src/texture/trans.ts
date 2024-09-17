@@ -1,4 +1,4 @@
-import { ComputeShader, Graphics, Mathf, RenderTexture, Shader } from "UnityEngine";
+import { ComputeShader, Graphics, Mathf, RenderTexture, Shader, Vector4 } from "UnityEngine";
 
 const RESULT: number = Shader.PropertyToID("result");
 const TEX1: number = Shader.PropertyToID("tex1");
@@ -13,6 +13,7 @@ interface RTProvider {
 /**
  * Returns a wrapper that allows you to do transformations on the passed in RenderTexture.
  * [Mutable] Operations will modify the input texture.
+ * [Op Dispatch] Operations will dispatch immediately.
  */
 export function trans(tex: RenderTexture | RTProvider) {
     return new Trans("rt" in tex ? tex.rt : tex);
@@ -52,9 +53,11 @@ export class Trans {
     #dispatch() {
         this.#shader.SetTexture(this.#kernel, TEX1, this.#input);
         this.#shader.SetTexture(this.#kernel, RESULT, this.#result);
-        this.#shader.SetFloats(OFFSET, this.#u, this.#v);
+        // this.#shader.SetFloats(OFFSET, this.#u, this.#v);
+        this.#shader.SetVector(OFFSET, new Vector4(this.#u, this.#v));
         this.#shader.SetFloat(ROTATION, this.#rot);
-        this.#shader.SetFloats(SCALE, this.#scaleX, this.#scaleY);
+        // this.#shader.SetFloats(SCALE, this.#scaleX, this.#scaleY);
+        this.#shader.SetVector(SCALE, new Vector4(this.#scaleX, this.#scaleY));
 
         Graphics.SetRenderTarget(this.#input);
         this.#shader.Dispatch(this.#kernel, this.#threadGroupsX, this.#threadGroupsY, 1);

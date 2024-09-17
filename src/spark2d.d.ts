@@ -89,9 +89,17 @@ declare namespace CS {
             protected [__keep_incompatibility]: never;
             public static SingleChannelRT32 ($width: number, $height: number) : UnityEngine.RenderTexture
             public static CreateRFloatRT ($width: number, $height: number) : UnityEngine.RenderTexture
+            public static CreateRT ($width: number, $height: number, $format?: UnityEngine.RenderTextureFormat) : UnityEngine.RenderTexture
+            public static CreateSinglePixelTexture ($color: UnityEngine.Color) : UnityEngine.RenderTexture
             public static Clone ($rt: UnityEngine.RenderTexture) : UnityEngine.RenderTexture
             public static InitNew ($rt: UnityEngine.RenderTexture) : UnityEngine.RenderTexture
             public static InitNew ($rt: UnityEngine.RenderTexture, $format: UnityEngine.RenderTextureFormat) : UnityEngine.RenderTexture
+            public constructor ()
+        }
+        class ComputeUtil extends System.Object
+        {
+            protected [__keep_incompatibility]: never;
+            public static CreateBuffer ($type: System.Type, $data: System.Array) : UnityEngine.ComputeBuffer
             public constructor ()
         }
         class TextureNativeUtil extends System.Object

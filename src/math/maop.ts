@@ -1,9 +1,11 @@
-import { ComputeShader, Graphics, Mathf, RenderTexture, Shader, Texture2D } from "UnityEngine";
+import { ComputeShader, Graphics, Mathf, RenderTexture, Shader, Texture2D, Vector4 } from "UnityEngine";
 
 const INPUT_A: number = Shader.PropertyToID("inputA");
 const INPUT_B: number = Shader.PropertyToID("inputB");
 const SCALARS: number = Shader.PropertyToID("scalars");
 const OPERATION: number = Shader.PropertyToID("operation");
+const MODE: number = Shader.PropertyToID("mode");
+const ROUTES: number = Shader.PropertyToID("routes");
 
 enum Operation {
     // Basic
@@ -13,12 +15,6 @@ enum Operation {
     DIVIDE = 3,
     POW = 4,
     SQRT = 5,
-    SCALAR_ADD = 6,
-    SCALAR_SUBTRACT = 7,
-    SCALAR_MULTIPLY = 8,
-    SCALAR_DIVIDE = 9,
-    SCALAR_POW = 10,
-    SCALAR_SQRT = 11,
     // Range
     CLAMP = 16,
     FRACTION = 17,
@@ -28,20 +24,50 @@ enum Operation {
     RANDOM_RANGE = 21,
     REMAP = 22,
     SATURATE = 23,
-    SCALAR_MAXIMUM = 24,
-    SCALAR_MINIMUM = 25,
+    // Advanced
+    ABSOLUTE = 32,
+    EXPONENTIAL = 33,
+    LENGTH = 34,
+    LOG = 35,
+    MODULO = 36,
+    NEGATE = 37,
+    NORMALIZE = 38,
+    POSTERIZE = 39,
+    RECIPROCAL = 40,
+    RECIPROCAL_SQRT = 41,
+}
+
+enum Mode {
+    Texture,
+    Vector,
+    Scalar
 }
 
 interface RTProvider {
     rt: RenderTexture;
 }
 
+let _cachedInputA: RenderTexture;
+let _cachedInputB: RenderTexture;
+
+// INPUT_B need to be explicitly binded first because sampler is used
+const shader = csDepot.Get("maop")
+const kernel = shader.FindKernel("CSMain");
+shader.SetTexture(kernel, INPUT_B, new Texture2D(1, 1));
+
+const _cacheMap = new WeakMap<RenderTexture, Maop>();
+
 /**
  * Returns a wrapper that allows you to do [MA]th [OP]erations on the passed in RenderTexture.
  * [Mutable] Operations will modify the input texture.
+ * [Op Dispatch] Operations will dispatch immediately.
  */
 export function maop(input: RenderTexture | RTProvider) {
-    return new Maop("rt" in input ? input.rt : input);
+    let rt = "rt" in input ? input.rt : input;
+    if (_cacheMap.has(rt)) return _cacheMap.get(rt);
+    let m = new Maop(rt);
+    _cacheMap.set(rt, m);
+    return m;
 }
 
 /**
@@ -58,11 +84,10 @@ export class Maop {
     #threadGroupsX: number;
     #threadGroupsY: number;
     #dummyTex: Texture2D;
+    #routes: number[] = [0, 1, 2, 4];
 
-    #basicShader: ComputeShader;
-    #basicKernel: number;
-    #rangeShader: ComputeShader;
-    #rangeKernel: number;
+    #shader: ComputeShader;
+    #kernel: number;
 
     #inputA: RenderTexture;
 
@@ -71,22 +96,65 @@ export class Maop {
         this.#threadGroupsX = Mathf.CeilToInt(input.width / 8);
         this.#threadGroupsY = Mathf.CeilToInt(input.height / 8);
         this.#dummyTex = new Texture2D(1, 1);
-        this.#basicShader = csDepot.Get("math:basic")
-        this.#basicKernel = this.#basicShader.FindKernel("CSMain");
-        this.#rangeShader = csDepot.Get("math:range")
-        this.#rangeKernel = this.#rangeShader.FindKernel("CSMain");
+        this.#shader = csDepot.Get("maop")
+        this.#kernel = this.#shader.FindKernel("CSMain");
     }
 
-    #predispatch() { 
-        // INPUT_B need to be explicitly binded first
-        this.#basicShader.SetTexture(this.#basicKernel, INPUT_B, this.#dummyTex);
+    #predispatch() {
+        this.#shader.SetInt(MODE, Mode.Texture);
     }
 
-    #dispatch(shader: ComputeShader, kernel: number) {
-        shader.SetTexture(kernel, INPUT_A, this.#inputA);
+    #dispatch() {
+        // this.#shader.SetTexture(this.#kernel, INPUT_A, this.#inputA);
+        this.#setTextureForInputA(this.#inputA);
+        // this.#shader.SetInts(ROUTES, ...this.#routes); // SetInts allocs
+        this.#shader.SetVector(ROUTES, new Vector4(this.#routes[0], this.#routes[1], this.#routes[2], this.#routes[3]));
 
-        Graphics.SetRenderTarget(this.#inputA);
-        shader.Dispatch(kernel, this.#threadGroupsX, this.#threadGroupsY, 1);
+        // Graphics.SetRenderTarget(this.#inputA);
+        this.#shader.Dispatch(this.#kernel, this.#threadGroupsX, this.#threadGroupsY, 1);
+    }
+
+    #dispatchForSingleOperand(op: Operation, cb?: Function): Maop {
+        this.#predispatch();
+        this.#shader.SetInt(OPERATION, op);
+        if (typeof cb === 'function') {
+            cb();
+        }
+        this.#dispatch();
+        return this;
+    }
+
+    #dispatchForTwoOperands(b: RenderTexture | number | number[], op: Operation): Maop {
+        this.#predispatch();
+        this.#shader.SetInt(OPERATION, op);
+        if (typeof b === "number") {
+            // this.#shader.SetFloats(SCALARS, b);
+            this.#shader.SetVector(SCALARS, new Vector4(b, 0));
+            this.#shader.SetInt(MODE, Mode.Scalar);
+        } else if (Array.isArray(b)) {
+            // this.#shader.SetFloats(SCALARS, ...b);
+            this.#shader.SetVector(SCALARS, new Vector4(b[0], b[1], b[2], b[3]));
+            this.#shader.SetInt(MODE, Mode.Vector);
+        } else {
+            // this.#shader.SetTexture(this.#kernel, INPUT_B, b);
+            this.#setTextureForInputB(b);
+        }
+        this.#dispatch();
+        return this;
+    }
+
+    #setTextureForInputA(rt: RenderTexture): void {
+        if (_cachedInputA !== rt) {
+            this.#shader.SetTexture(this.#kernel, INPUT_A, rt);
+            _cachedInputA = rt;
+        }
+    }
+
+    #setTextureForInputB(rt: RenderTexture): void {
+        if (_cachedInputB !== rt) {
+            this.#shader.SetTexture(this.#kernel, INPUT_B, rt);
+            _cachedInputB = rt;
+        }
     }
 
     blit(rt: RenderTexture): Maop {
@@ -95,87 +163,56 @@ export class Maop {
     }
 
     /**
+     * Use this to setup what each component is wired to for component-wise operations.
+     * Default is 0, 1, 2, 4
+     * 
+     * 0: r, 1: g, 2: b, 3: a, 4: ignored
+     */
+    routes(r: number, g: number, b: number, a: number): Maop {
+        this.#routes = [r, g, b, a];
+        return this;
+    }
+
+    /**
      * MARK: Basic
      */
     add(scalar: number): Maop
+    add(vector: number[]): Maop
     add(other: RenderTexture): Maop
-    add(a: RenderTexture | number): Maop {
-        this.#predispatch();
-        if (typeof a === "number") {
-            this.#basicShader.SetInt(OPERATION, Operation.SCALAR_ADD);
-            this.#basicShader.SetFloats(SCALARS, a);
-        } else {
-            this.#basicShader.SetInt(OPERATION, Operation.ADD);
-            this.#basicShader.SetTexture(this.#basicKernel, INPUT_B, a);
-        }
-        this.#dispatch(this.#basicShader, this.#basicKernel);
-        return this;
+    add(b: RenderTexture | number | number[]): Maop {
+        return this.#dispatchForTwoOperands(b, Operation.ADD);
     }
 
     subtract(scalar: number): Maop
-    subtract(other: RenderTexture): Maop
-    subtract(a: RenderTexture | number): Maop {
-        this.#predispatch();
-        if (typeof a === "number") {
-            this.#basicShader.SetInt(OPERATION, Operation.SCALAR_SUBTRACT);
-            this.#basicShader.SetFloats(SCALARS, a);
-        } else {
-            this.#basicShader.SetInt(OPERATION, Operation.SUBTRACT);
-            this.#basicShader.SetTexture(this.#basicKernel, INPUT_B, a);
-        }
-        this.#dispatch(this.#basicShader, this.#basicKernel);
-        return this;
+    subtract(vector: number[]): Maop
+    subtract(texture: RenderTexture): Maop
+    subtract(b: RenderTexture | number | number[]): Maop {
+        return this.#dispatchForTwoOperands(b, Operation.SUBTRACT);
     }
 
     multiply(scalar: number): Maop
-    multiply(other: RenderTexture): Maop
-    multiply(a: RenderTexture | number): Maop {
-        this.#predispatch();
-        if (typeof a === "number") {
-            this.#basicShader.SetInt(OPERATION, Operation.SCALAR_MULTIPLY);
-            this.#basicShader.SetFloats(SCALARS, a);
-        } else {
-            this.#basicShader.SetInt(OPERATION, Operation.MULTIPLY);
-            this.#basicShader.SetTexture(this.#basicKernel, INPUT_B, a);
-        }
-        this.#dispatch(this.#basicShader, this.#basicKernel);
-        return this;
+    multiply(vector: number[]): Maop
+    multiply(texture: RenderTexture): Maop
+    multiply(b: RenderTexture | number | number[]): Maop {
+        return this.#dispatchForTwoOperands(b, Operation.MULTIPLY);
     }
 
     divide(scalar: number): Maop
-    divide(other: RenderTexture): Maop
-    divide(a: RenderTexture | number): Maop {
-        this.#predispatch();
-        if (typeof a === "number") {
-            this.#basicShader.SetInt(OPERATION, Operation.SCALAR_DIVIDE);
-            this.#basicShader.SetFloats(SCALARS, a);
-        } else {
-            this.#basicShader.SetInt(OPERATION, Operation.DIVIDE);
-            this.#basicShader.SetTexture(this.#basicKernel, INPUT_B, a);
-        }
-        this.#dispatch(this.#basicShader, this.#basicKernel);
-        return this;
+    divide(vector: number[]): Maop
+    divide(texture: RenderTexture): Maop
+    divide(b: RenderTexture | number | number[]): Maop {
+        return this.#dispatchForTwoOperands(b, Operation.DIVIDE);
     }
 
     pow(scalar: number): Maop
-    pow(other: RenderTexture): Maop
-    pow(a: RenderTexture | number): Maop {
-        this.#predispatch();
-        if (typeof a === "number") {
-            this.#basicShader.SetInt(OPERATION, Operation.SCALAR_POW);
-            this.#basicShader.SetFloats(SCALARS, a);
-        } else {
-            this.#basicShader.SetInt(OPERATION, Operation.POW);
-            this.#basicShader.SetTexture(this.#basicKernel, INPUT_B, a);
-        }
-        this.#dispatch(this.#basicShader, this.#basicKernel);
-        return this;
+    pow(vector: number[]): Maop
+    pow(texture: RenderTexture): Maop
+    pow(b: RenderTexture | number | number[]): Maop {
+        return this.#dispatchForTwoOperands(b, Operation.POW);
     }
 
     sqrt(): Maop {
-        this.#predispatch();
-        this.#basicShader.SetInt(OPERATION, Operation.SQRT);
-        this.#dispatch(this.#basicShader, this.#basicKernel);
+        this.#dispatchForSingleOperand(Operation.SQRT);
         return this;
     }
 
@@ -183,63 +220,113 @@ export class Maop {
      * MARK: Range
      */
     clamp(min: number, max: number): Maop {
-        this.#predispatch();
-        this.#rangeShader.SetInt(OPERATION, Operation.CLAMP);
-        this.#rangeShader.SetFloats(SCALARS, min, max);
-        this.#dispatch(this.#rangeShader, this.#rangeKernel);
+        this.#dispatchForSingleOperand(Operation.CLAMP, () => {
+            // this.#shader.SetFloats(SCALARS, min, max);
+            this.#shader.SetVector(SCALARS, new Vector4(min, max));
+        });
         return this;
     }
 
     frac(): Maop {
-        this.#predispatch();
-        this.#rangeShader.SetInt(OPERATION, Operation.FRACTION);
-        this.#dispatch(this.#rangeShader, this.#rangeKernel);
+        this.#dispatchForSingleOperand(Operation.FRACTION);
         return this;
     }
 
-    max(a: number): Maop {
-        this.#predispatch();
-        this.#rangeShader.SetInt(OPERATION, Operation.SCALAR_MAXIMUM);
-        this.#rangeShader.SetFloats(SCALARS, a);
-        this.#dispatch(this.#rangeShader, this.#rangeKernel);
-        return this;
+    max(scalar: number): Maop
+    max(vector: number[]): Maop
+    max(texture: RenderTexture): Maop
+    max(b: RenderTexture | number | number[]): Maop {
+        return this.#dispatchForTwoOperands(b, Operation.MAXIMUM);
     }
 
-    min(a: number): Maop {
-        this.#predispatch();
-        this.#rangeShader.SetInt(OPERATION, Operation.SCALAR_MINIMUM);
-        this.#rangeShader.SetFloats(SCALARS, a);
-        this.#dispatch(this.#rangeShader, this.#rangeKernel);
-        return this;
+    min(scalar: number): Maop
+    min(vector: number[]): Maop
+    min(texture: RenderTexture): Maop
+    min(b: RenderTexture | number | number[]): Maop {
+        return this.#dispatchForTwoOperands(b, Operation.MINIMUM);
     }
 
     oneMinus(): Maop {
-        this.#predispatch();
-        this.#rangeShader.SetInt(OPERATION, Operation.ONE_MINUS);
-        this.#dispatch(this.#rangeShader, this.#rangeKernel);
+        this.#dispatchForSingleOperand(Operation.ONE_MINUS);
         return this;
     }
 
     randomRange(min: number, max: number): Maop {
-        this.#predispatch();
-        this.#rangeShader.SetInt(OPERATION, Operation.RANDOM_RANGE);
-        this.#rangeShader.SetFloats(SCALARS, min, max);
-        this.#dispatch(this.#rangeShader, this.#rangeKernel);
+        this.#dispatchForSingleOperand(Operation.RANDOM_RANGE, () => {
+            // this.#shader.SetFloats(SCALARS, min, max);
+            this.#shader.SetVector(SCALARS, new Vector4(min, max));
+        });
         return this;
     }
 
     remap(fromMin: number, fromMax: number, toMin: number, toMax: number): Maop {
-        this.#predispatch();
-        this.#rangeShader.SetInt(OPERATION, Operation.REMAP);
-        this.#rangeShader.SetFloats(SCALARS, fromMin, fromMax, toMin, toMax);
-        this.#dispatch(this.#rangeShader, this.#rangeKernel);
+        this.#dispatchForSingleOperand(Operation.REMAP, () => {
+            // this.#shader.SetFloats(SCALARS, fromMin, fromMax, toMin, toMax);
+            this.#shader.SetVector(SCALARS, new Vector4(fromMin, fromMax, toMin, toMax));
+        });
         return this;
     }
 
     saturate(): Maop {
-        this.#predispatch();
-        this.#rangeShader.SetInt(OPERATION, Operation.SATURATE);
-        this.#dispatch(this.#rangeShader, this.#rangeKernel);
+        this.#dispatchForSingleOperand(Operation.SATURATE);
+        return this;
+    }
+
+    /**
+     * MARK: Advanced
+     */
+
+    abs(): Maop {
+        this.#dispatchForSingleOperand(Operation.ABSOLUTE);
+        return this;
+    }
+
+    exp(): Maop {
+        this.#dispatchForSingleOperand(Operation.EXPONENTIAL);
+        return this;
+    }
+
+    length(): Maop {
+        this.#dispatchForSingleOperand(Operation.LENGTH);
+        return this;
+    }
+
+    log(): Maop {
+        this.#dispatchForSingleOperand(Operation.LOG);
+        return this;
+    }
+
+    modulo(scalar: number): Maop
+    modulo(vector: number[]): Maop
+    modulo(texture: RenderTexture): Maop
+    modulo(b: RenderTexture | number | number[]): Maop {
+        return this.#dispatchForTwoOperands(b, Operation.MODULO);
+    }
+
+    negate(): Maop {
+        this.#dispatchForSingleOperand(Operation.NEGATE);
+        return this;
+    }
+
+    normalize(): Maop {
+        this.#dispatchForSingleOperand(Operation.NORMALIZE);
+        return this;
+    }
+
+    posterize(scalar: number): Maop
+    posterize(vector: number[]): Maop
+    posterize(texture: RenderTexture): Maop
+    posterize(b: RenderTexture | number | number[]): Maop {
+        return this.#dispatchForTwoOperands(b, Operation.POSTERIZE);
+    }
+
+    reciprocal(): Maop {
+        this.#dispatchForSingleOperand(Operation.RECIPROCAL);
+        return this;
+    }
+
+    reciprocalSqrt(): Maop {
+        this.#dispatchForSingleOperand(Operation.RECIPROCAL_SQRT);
         return this;
     }
 }

@@ -1,4 +1,4 @@
-import { ComputeShader, Graphics, Mathf, RenderTexture, Shader } from "UnityEngine";
+import { ComputeShader, FilterMode, Graphics, Mathf, RenderTexture, RenderTextureFormat, Shader, Vector2, Vector4 } from "UnityEngine";
 
 const RESULT: number = Shader.PropertyToID("result");
 const SCALE: number = Shader.PropertyToID("scale");
@@ -10,7 +10,8 @@ const GAIN: number = Shader.PropertyToID("gain");
 const SEED: number = Shader.PropertyToID("seed");
 
 /**
- * Returns an FBM (Fractional Brownian Motion) noise generator
+ * Returns an FBM (Fractional Brownian Motion) noise generator. 
+ * [New RT] A new RenderTexture will be created.
  */
 export function fbm(width?: number, height?: number) {
     width = width ?? 512;
@@ -44,9 +45,15 @@ export class FBM {
     constructor(width: number, height: number) {
         this.#threadGroupsX = Mathf.CeilToInt(width / 8);
         this.#threadGroupsY = Mathf.CeilToInt(height / 8);
-        this.#texture = CS.Spark2D.RenderTextureUtil.CreateRFloatRT(width, height);
+        this.#texture = CS.Spark2D.RenderTextureUtil.CreateRT(width, height);
+        this.#texture.filterMode = FilterMode.Point;
         this.#shader = csDepot.Get("fbm")
         this.#kernel = this.#shader.FindKernel("CSMain");
+    }
+
+    seed(value: number) {
+        this.#seed = value;
+        return this;
     }
 
     offset(x: number, y: number) {
@@ -83,7 +90,8 @@ export class FBM {
     dispatch() {
         this.#shader.SetTexture(this.#kernel, RESULT, this.#texture);
         this.#shader.SetFloat(SCALE, this.#scale);
-        this.#shader.SetFloats(OFFSET, this.#offsetX, this.#offsetY);
+        // this.#shader.SetFloats(OFFSET, this.#offsetX, this.#offsetY); // SetFloats allocs
+        this.#shader.SetVector(OFFSET, new Vector4(this.#offsetX, this.#offsetY));
         this.#shader.SetInt(OCTAVES, this.#octaves);
         this.#shader.SetFloat(LACUNARITY, this.#lacunarity);
         this.#shader.SetFloat(GAIN, this.#gain);

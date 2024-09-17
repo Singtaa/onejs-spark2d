@@ -16,7 +16,7 @@ enum Operation {
 
 /**
  * Returns a wrapper that allows you to do channel-related operations on the passed in RenderTexture.
- * [Immutable] Operations will not modify the input texture. (input and result textures may have different formats)
+ * [Mutable] Operations will modify the input texture.
  */
 export function channel(tex: RenderTexture | RTProvider) {
     return new Channel("rt" in tex ? tex.rt : tex);
@@ -34,14 +34,11 @@ export class Channel {
     #threadGroupsY: number;
     #shader: ComputeShader;
     #kernel: number;
-    #input: RenderTexture;  // The original texture
     #result: RenderTexture;
 
     constructor(rt: RenderTexture) {
         const { width, height } = rt;
-        this.#input = rt;
-        this.#result = CS.Spark2D.RenderTextureUtil.InitNew(rt, RenderTextureFormat.ARGBFloat);
-        Graphics.Blit(rt, this.#result);
+        this.#result = rt;
         this.#threadGroupsX = Mathf.CeilToInt(width / 8);
         this.#threadGroupsY = Mathf.CeilToInt(height / 8);
         this.#shader = csDepot.Get("channel");
@@ -51,7 +48,7 @@ export class Channel {
     #dispatch() {
         this.#shader.SetTexture(this.#kernel, RESULT, this.#result);
 
-        Graphics.SetRenderTarget(this.#input);
+        Graphics.SetRenderTarget(this.#result);
         this.#shader.Dispatch(this.#kernel, this.#threadGroupsX, this.#threadGroupsY, 1);
     }
 

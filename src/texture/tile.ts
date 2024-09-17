@@ -1,4 +1,4 @@
-import { ComputeShader, Graphics, Mathf, RenderTexture, Shader } from "UnityEngine";
+import { ComputeShader, Graphics, Mathf, RenderTexture, Shader, Vector4 } from "UnityEngine";
 
 const RESULT: number = Shader.PropertyToID("result");
 const TEX1: number = Shader.PropertyToID("tex1");
@@ -44,7 +44,7 @@ export class Tile {
         this.#tex1 = rt;
         this.#threadGroupsX = Mathf.CeilToInt(width / 8);
         this.#threadGroupsY = Mathf.CeilToInt(height / 8);
-        this.#result = CS.Spark2D.RenderTextureUtil.CreateRFloatRT(width, height);
+        this.#result = CS.Spark2D.RenderTextureUtil.CreateRT(width, height);
         this.#shader = csDepot.Get("trans");
         this.#kernel = this.#shader.FindKernel("CSMain");
     }
@@ -89,9 +89,11 @@ export class Tile {
     dispatch() {
         this.#shader.SetTexture(this.#kernel, TEX1, this.#tex1);
         this.#shader.SetTexture(this.#kernel, RESULT, this.#result);
-        this.#shader.SetFloats(OFFSET, this.#u, this.#v);
+        // this.#shader.SetFloats(OFFSET, this.#u, this.#v);
+        this.#shader.SetVector(OFFSET, new Vector4(this.#u, this.#v));
         this.#shader.SetFloat(ROTATION, this.#rot);
-        this.#shader.SetFloats(SCALE, this.#scaleX, this.#scaleY);
+        // this.#shader.SetFloats(SCALE, this.#scaleX, this.#scaleY);
+        this.#shader.SetVector(SCALE, new Vector4(this.#scaleX, this.#scaleY));
 
         Graphics.SetRenderTarget(this.#result);
         this.#shader.Dispatch(this.#kernel, this.#threadGroupsX, this.#threadGroupsY, 1);
