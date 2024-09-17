@@ -10,6 +10,8 @@ npm i spark2d
 
 `spark2d` requires you to expose the provided ComputeShaderDepot as `csDepot` in ScriptEngine's Globals list.
 
+## Sample
+
 Documentation will be available when `spark2d` is a bit more mature. For the time-being, here's a quick sample.
 
 https://github.com/user-attachments/assets/851eb853-699b-4f65-9ae3-d7837f000c68
@@ -183,7 +185,7 @@ function getRandomAuraColor(): Color {
 render(<App />, document.body)
 ```
 
-### Zero-alloc Interop
+## Zero-alloc Interop
 
 For completeness, here's the Puerts Config that will make the JS-C# interop as performant as possible and allocation-free. See [the OneJS page](https://onejs.com/docs/v2.0/rainbow-bars) for more info.
 
