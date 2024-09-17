@@ -10,7 +10,7 @@ npm i spark2d
 
 `spark2d` requires you to expose the provided ComputeShaderDepot as `csDepot` in ScriptEngine's Globals list.
 
-Documentation will be available when `spark2d` is a bit more mature. But here's a quick sample.
+Documentation will be available when `spark2d` is a bit more mature. For the time-being, here's a quick sample.
 
 https://github.com/user-attachments/assets/851eb853-699b-4f65-9ae3-d7837f000c68
 
