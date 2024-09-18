@@ -18,7 +18,7 @@ https://github.com/user-attachments/assets/f29f70e1-a75f-4278-972b-babb8c7a3857
 
 ```tsx
 import { h, render } from "preact"
-import { Slider } from "comps/slider"
+import { Slider } from "onejs-comps"
 import { Image } from "UnityEngine/UIElements"
 import { useEffect, useRef } from "preact/hooks"
 import { Color, Mathf, RenderTexture, Time } from "UnityEngine"
