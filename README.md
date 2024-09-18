@@ -14,7 +14,7 @@ npm i spark2d
 
 Documentation will be available when `spark2d` is a bit more mature. For the time-being, here's a quick sample.
 
-https://github.com/user-attachments/assets/851eb853-699b-4f65-9ae3-d7837f000c68
+https://github.com/user-attachments/assets/f29f70e1-a75f-4278-972b-babb8c7a3857
 
 ```tsx
 import { h, render } from "preact"
