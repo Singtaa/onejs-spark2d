@@ -3,6 +3,7 @@ import { ComputeShader, Graphics, Mathf, RenderTexture, Shader, Texture2D, Vecto
 const INPUT_A: number = Shader.PropertyToID("inputA");
 const INPUT_B: number = Shader.PropertyToID("inputB");
 const SCALARS: number = Shader.PropertyToID("scalars");
+const EXTRAS: number = Shader.PropertyToID("extras");
 const OPERATION: number = Shader.PropertyToID("operation");
 const MODE: number = Shader.PropertyToID("mode");
 const ROUTES: number = Shader.PropertyToID("routes");
@@ -35,6 +36,10 @@ enum Operation {
     POSTERIZE = 39,
     RECIPROCAL = 40,
     RECIPROCAL_SQRT = 41,
+    // Interpolation
+    LERP = 48,
+    SMOOTHSTEP = 49,
+    INVERSE_LERP = 50,
 }
 
 enum Mode {
@@ -328,5 +333,34 @@ export class Maop {
     reciprocalSqrt(): Maop {
         this.#dispatchForSingleOperand(Operation.RECIPROCAL_SQRT);
         return this;
+    }
+
+    /**
+     * MARK: Interpolation
+     */
+    lerp(scalar: number, t: number): Maop
+    lerp(vector: number[], t: number): Maop
+    lerp(texture: RenderTexture, t: number): Maop
+    lerp(b: RenderTexture | number | number[], t: number): Maop {
+        this.#shader.SetFloat(EXTRAS, t);
+        return this.#dispatchForTwoOperands(b, Operation.LERP);
+    }
+
+    smoothstep(edge0: number, edge1: number): Maop {
+        return this.#dispatchForSingleOperand(Operation.SMOOTHSTEP, () => {
+            this.#shader.SetVector(SCALARS, new Vector4(edge0, edge1));
+        });
+    }
+
+    inverseLerp(a: number): Maop
+    inverseLerp(texture: RenderTexture): Maop
+    inverseLerp(b: RenderTexture | number): Maop {
+        if (typeof b === "number") {
+            return this.#dispatchForSingleOperand(Operation.INVERSE_LERP, () => {
+                this.#shader.SetVector(SCALARS, new Vector4(b, 0));
+            });
+        } else {
+            return this.#dispatchForTwoOperands(b, Operation.INVERSE_LERP);
+        }
     }
 }

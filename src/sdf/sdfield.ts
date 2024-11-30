@@ -42,7 +42,7 @@ export enum ShapeType {
     Tunnel,
     Stairs,
     QuadraticCircle,
-    Hyberbola,
+    Hyperbola,
     CoolS,
     CircleWave
 }
@@ -500,7 +500,7 @@ export class SDField {
     }
 
     hyperbola(k: number, height: number) {
-        this.#shader.SetInt(SHAPE_TYPE, ShapeType.Hyberbola);
+        this.#shader.SetInt(SHAPE_TYPE, ShapeType.Hyperbola);
         this.#shader.SetFloat(F1, k);
         this.#shader.SetFloat(F2, height);
         this.#dispatch();

@@ -19,6 +19,7 @@ const _cacheMap = new WeakMap<RenderTexture, Blur>();
  * Returns a wrapper that allows you to apply a Gaussian blur to the passed in RenderTexture.
  * [Mutable] Operations will modify the input texture.
  * [New RT] Will create a new RenderTexture internally for buffering.
+ * [Cached RT] Subsequent calls with the same RenderTexture will return the same instance.
  */
 export function blur(input: RenderTexture | RTProvider) {
     let rt = "rt" in input ? input.rt : input;

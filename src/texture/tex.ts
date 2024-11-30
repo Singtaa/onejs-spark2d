@@ -36,7 +36,7 @@ export class Tex {
         }
     }
 
-    blitFrom(rt: RenderTexture) {
+    blitFrom(rt: Texture) {
         Graphics.Blit(rt, this.#texture);
         return this;
     }

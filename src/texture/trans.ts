@@ -1,10 +1,12 @@
-import { ComputeShader, Graphics, Mathf, RenderTexture, Shader, Vector4 } from "UnityEngine";
+import { Color, ComputeShader, Graphics, Mathf, RenderTexture, Shader, Vector4 } from "UnityEngine";
 
 const RESULT: number = Shader.PropertyToID("result");
 const TEX1: number = Shader.PropertyToID("tex1");
 const OFFSET: number = Shader.PropertyToID("offset");
 const ROTATION: number = Shader.PropertyToID("rotation");
 const SCALE: number = Shader.PropertyToID("scale");
+const TILING: number = Shader.PropertyToID("tiling");
+const BG_COLOR: number = Shader.PropertyToID("bgColor");
 
 interface RTProvider {
     rt: RenderTexture;
@@ -39,6 +41,8 @@ export class Trans {
     #rot: number = 0
     #scaleX: number = 1
     #scaleY: number = 1
+    #tiling: boolean = false
+    #bgColor: Color = Color.clear
 
     constructor(rt: RenderTexture) {
         const { width, height } = rt;
@@ -50,7 +54,7 @@ export class Trans {
         this.#kernel = this.#shader.FindKernel("CSMain");
     }
 
-    #dispatch() {
+    dispatch() {
         this.#shader.SetTexture(this.#kernel, TEX1, this.#input);
         this.#shader.SetTexture(this.#kernel, RESULT, this.#result);
         // this.#shader.SetFloats(OFFSET, this.#u, this.#v);
@@ -64,13 +68,22 @@ export class Trans {
         Graphics.Blit(this.#result, this.#input);
     }
 
+    tile(v = true) {
+        this.#tiling = v;
+        return this;
+    }
+
+    bgColor(c: Color) {
+        this.#bgColor = c;
+        return this;
+    }
+
     /**
      * Translate (in UV space) the texture by the given offset
      */
     offset(u: number, v: number) {
         this.#u = u;
         this.#v = v;
-        this.#dispatch();
         return this;
     }
 
@@ -79,7 +92,6 @@ export class Trans {
      */
     rot(rot: number) { // in degrees
         this.#rot = rot * Mathf.Deg2Rad;
-        this.#dispatch();
         return this;
     }
 
@@ -88,7 +100,6 @@ export class Trans {
      */
     rotr(rot: number) { // in radians
         this.#rot = rot;
-        this.#dispatch();
         return this;
     }
 
@@ -98,7 +109,6 @@ export class Trans {
     scale(x: number, y?: number) {
         this.#scaleX = x;
         this.#scaleY = y ?? x;
-        this.#dispatch();
         return this;
     }
 }
