@@ -1,7 +1,7 @@
 {
     "name": "spark2d",
     "description": "This is the JS part of Spark2D, a 2D visual effects library for Unity",
-    "version": "0.0.6",
+    "version": "0.0.8",
     "main": "./dist/index.js",
     "types": "./index.d.ts",
     "exports": {
