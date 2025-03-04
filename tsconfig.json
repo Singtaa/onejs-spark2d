@@ -19,11 +19,12 @@
         "skipLibCheck": false,
         "forceConsistentCasingInFileNames": true,
         "declaration": true,
-        "types": [ "onejs-core" ]
+        "types": ["jest", "onejs-core"]
     },
-    "include": [ "src/**/*" ],
+    "include": ["src/**/*"],
     "exclude": [
         "node_modules",
+        "src/__mocks__",
         "dist",
         "index.d.ts"
     ]

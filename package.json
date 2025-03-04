@@ -1,19 +1,27 @@
 {
     "name": "spark2d",
     "description": "This is the JS part of Spark2D, a 2D visual effects library for Unity",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "main": "./dist/index.js",
     "types": "./index.d.ts",
     "exports": {
-        ".": "./dist/index.js", 
+        ".": "./dist/index.js",
         "./sdf": "./dist/sdf/index.js",
         "./texture": "./dist/texture/index.js",
         "./noise": "./dist/noise/index.js",
         "./comps": "./dist/comps/index.js",
         "./math": "./dist/math/index.js"
     },
+    "scripts": {
+        "test": "jest"
+    },
     "dependencies": {
         "onejs-core": "^0.3.25",
         "onejs-preact": "^0.3.18"
+    },
+    "devDependencies": {
+        "@types/jest": "^29.5.14",
+        "jest": "^29.7.0",
+        "ts-jest": "^29.2.6"
     }
 }
