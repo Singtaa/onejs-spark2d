@@ -1,4 +1,5 @@
-import { float2 } from "Unity/Mathematics";
+import { float2 } from "Unity/Mathematics"
+import { Array } from "System"
 
 /**
  * Calculates points along a Bezier curve of any order using De Casteljau's algorithm.
@@ -19,9 +20,9 @@ import { float2 } from "Unity/Mathematics";
  */
 export function curve(controlPoints, count) {
     if (count < 2 || controlPoints.length < 2)
-        return CS.System.Array.CreateInstance(puer.$typeof(float2), 0);
+        return Array.CreateInstance(puer.$typeof(float2), 0);
 
-    const points = CS.System.Array.CreateInstance(puer.$typeof(float2), count);
+    const points = Array.CreateInstance(puer.$typeof(float2), count);
 
     for (let i = 0; i < count; i++) {
         const t = count > 1 ? i / (count - 1) : 0;

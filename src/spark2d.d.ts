@@ -59,6 +59,10 @@ declare namespace CS {
             public Get ($name: string) : any
             public constructor ()
         }
+        class ComputeShaderExts extends System.Object
+        {
+            protected [__keep_incompatibility]: never;
+        }
         interface INoiseGenerator
         {
             Generate ($x: number, $y: number) : number
@@ -84,22 +88,38 @@ declare namespace CS {
             protected [__keep_incompatibility]: never;
             public static Generate ($source: UnityEngine.Texture2D, $destination: UnityEngine.Texture2D, $maxInside: number, $maxOutside: number, $postProcessDistance: number, $rgbMode: Spark2D.RGBFillMode) : void
         }
-        class RenderTextureUtil extends System.Object
+        class ShelfRow extends System.Object
         {
             protected [__keep_incompatibility]: never;
-            public static SingleChannelRT32 ($width: number, $height: number) : UnityEngine.RenderTexture
-            public static CreateRFloatRT ($width: number, $height: number) : UnityEngine.RenderTexture
-            public static CreateRT ($width: number, $height: number, $format?: UnityEngine.RenderTextureFormat) : UnityEngine.RenderTexture
-            public static CreateSinglePixelTexture ($color: UnityEngine.Color) : UnityEngine.RenderTexture
-            public static Clone ($rt: UnityEngine.RenderTexture) : UnityEngine.RenderTexture
-            public static InitNew ($rt: UnityEngine.RenderTexture) : UnityEngine.RenderTexture
-            public static InitNew ($rt: UnityEngine.RenderTexture, $format: UnityEngine.RenderTextureFormat) : UnityEngine.RenderTexture
+            public name : string
+            public items : System.Array$1<UnityEngine.Object>
+            public constructor ()
+        }
+        class Shelf extends UnityEngine.ScriptableObject
+        {
+            protected [__keep_incompatibility]: never;
+            public rows : System.Array$1<Spark2D.ShelfRow>
+            public GetItems ($rowName: string) : System.Array$1<UnityEngine.Object>
             public constructor ()
         }
         class ComputeUtil extends System.Object
         {
             protected [__keep_incompatibility]: never;
             public static CreateBuffer ($type: System.Type, $data: System.Array) : UnityEngine.ComputeBuffer
+            public constructor ()
+        }
+        class RenderTextureUtil extends System.Object
+        {
+            protected [__keep_incompatibility]: never;
+            public static SingleChannelRT32 ($width: number, $height: number) : UnityEngine.RenderTexture
+            public static CreateRFloatRT ($width: number, $height: number) : UnityEngine.RenderTexture
+            public static CreateRT ($width: number, $height: number) : UnityEngine.RenderTexture
+            public static CreateRT ($width: number, $height: number, $format: UnityEngine.RenderTextureFormat) : UnityEngine.RenderTexture
+            public static CreateSinglePixelTexture ($color: UnityEngine.Color) : UnityEngine.Texture2D
+            public static CreateSinglePixelRenderTexture ($color: UnityEngine.Color) : UnityEngine.RenderTexture
+            public static Clone ($rt: UnityEngine.RenderTexture) : UnityEngine.RenderTexture
+            public static InitNew ($rt: UnityEngine.RenderTexture) : UnityEngine.RenderTexture
+            public static InitNew ($rt: UnityEngine.RenderTexture, $format: UnityEngine.RenderTextureFormat) : UnityEngine.RenderTexture
             public constructor ()
         }
         class TextureNativeUtil extends System.Object
@@ -121,6 +141,11 @@ declare namespace CS {
             public get Size(): Unity.Mathematics.int2;
             public get ByteSize(): number;
             public constructor ($size: Unity.Mathematics.int2, $precision: Spark2D.Precision, $channels: Spark2D.Channels, $filterMode?: UnityEngine.FilterMode)
+        }
+        class MeshUtil extends System.Object
+        {
+            protected [__keep_incompatibility]: never;
+            public static CreateQuadsMesh ($mesh: UnityEngine.Mesh, $positions: System.Array$1<Unity.Mathematics.float2>, $rotations?: System.Array$1<number>, $scales?: System.Array$1<number>, $colors?: System.Array$1<Unity.Mathematics.float4>) : void
         }
         class PairMappingAttribute extends UnityEngine.PropertyAttribute implements System.Runtime.InteropServices._Attribute
         {
@@ -165,5 +190,3 @@ declare namespace CS {
         }
     }
 }
-
-declare const csDepot: CS.Spark2D.Depot;

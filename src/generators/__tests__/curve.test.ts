@@ -1,6 +1,7 @@
 // calculateBezierPoints.test.ts
 import { curve } from '../curve'
-import { float2 } from '../../__mocks__/common'
+import { float2 } from "Unity/Mathematics"
+import { Array } from "System"
 
 describe('calculateBezierPoints', () => {
     beforeEach(() => {
@@ -42,23 +43,23 @@ describe('calculateBezierPoints', () => {
         expect(result[2]).toEqual(new float2(2, 0))
     })
 
-it('calls CS.System.Array.CreateInstance with the correct parameters', () => {
+    it('calls CS.System.Array.CreateInstance with the correct parameters', () => {
         curve([{ x: 0, y: 0 }, { x: 1, y: 1 }], 3);
 
         // Use a custom matcher to check the arguments.
-        expect(CS.System.Array.CreateInstance).toHaveBeenCalledWith(
+        expect(Array.CreateInstance).toHaveBeenCalledWith(
             expect.anything(), // We'll check the type more specifically below
             3
         );
 
         // Get the arguments of the first call to CreateInstance
-        const [firstArg, secondArg] = (CS.System.Array.CreateInstance as any).mock.calls[0];
+        const [firstArg, secondArg] = (Array.CreateInstance as any).mock.calls[0];
 
         // Check if the first argument is a function (our "typeof" float2)
         expect(typeof firstArg).toBe('function');
 
         // Check if calling the function with a sample object returns an object with x and y properties
-        const instance = new firstArg(1,2);
+        const instance = new firstArg(1, 2);
         expect(instance).toHaveProperty('x');
         expect(instance).toHaveProperty('y');
     });

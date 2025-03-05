@@ -11,7 +11,7 @@ interface RTProvider {
     rt: RenderTexture;
 }
 
-const __pixelTex = CS.Spark2D.RenderTextureUtil.CreateSinglePixelTexture(Color.white);
+const __pixelTex = CS.Spark2D.RenderTextureUtil.CreateSinglePixelRenderTexture(Color.white);
 
 const _cacheMap = new WeakMap<RenderTexture, Blur>();
 
