@@ -1,3 +1,5 @@
+> We're in a bit of a transition right now. OneJS is now open source, and we're currently working on Spark2D internally.
+
 (WIP)
 
 This is the JS bindings and wrappers for [Spark2D](https://github.com/Singtaa/Spark2D). You can use this in any [OneJS](https://onejs.com)-enabled Unity projects and games.
